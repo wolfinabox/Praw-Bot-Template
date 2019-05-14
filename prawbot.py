@@ -81,6 +81,9 @@ def handle_comments(bot: praw.Reddit, max_comments: int = 25):
             # Don't reply to ourself
             if comment.author == bot.user.me():
                 continue
+            # Don't reply to unsubscribed users
+            if comment.author in config['unsubscribed_users']:
+                continue
             # Get Replies (this needs to be done, otherwise replies are not requested)
             comment.refresh()
             # Don't reply to the same post more than once
@@ -111,12 +114,14 @@ def handle_messages(bot: praw.Reddit, max_messages: int = 25):
     logger.info('Messages ('+str(len(messages))+'):')
     # Iterate through every message
     for message in messages:
-        logger.info('Sender: '(str(message.author)
-                               if message.author else 'Reddit'))
+        logger.info('Sender: '+(str(message.author)
+                                if message.author else 'Reddit'))
         logger.info('\t"'+truncate(message.body, 70, '...')+'"')
+
         # This is where you can handle different text in the messages.
         # Unsubscribe user
         if 'unsubscribe' in message.subject.lower() or 'unsubscribe' in message.body.lower():
+            logger.info(f'Unsubscribing "{message.author}"')
             config['unsubscribed_users'].append(str(message.author))
             save()
             message.reply(
